@@ -13,5 +13,11 @@ namespace ET
         // 这里配置逻辑层的错误码
         // 110000 - 200000是抛异常的错误
         // 200001以上不抛异常
+        public const int ERR_NetWorkError = 200002;//网络错误
+        public const int ERR_LoginInfoError = 200003;//
+        public const int ERR_RoleNameIsNull = 200004;//
+        public const int ERR_RequestRepeately = 200005;//网络错误
+        public const int ERR_RoleNameSame = 200006;//网络错误
+
     }
 }

@@ -17,7 +17,6 @@ namespace ET
             this.Tcs = ETTask<IResponse>.Create(true);
         }
     }
-    
     [FriendClass(typeof(Session))]
     public static class SessionSystem
     {
@@ -142,7 +141,6 @@ namespace ET
             self.AService.SendStream(self.Id, actorId, memoryStream);
         }
     }
-
     public sealed class Session: Entity, IAwake<AService>, IDestroy
     {
         public AService AService;
