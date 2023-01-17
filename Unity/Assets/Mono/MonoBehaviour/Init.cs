@@ -9,6 +9,7 @@ namespace ET
 		Mono = 1,
 		ILRuntime = 2,
 		Reload = 3,
+		HybridCLR = 4,
 	}
 	
 	public class Init: MonoBehaviour
@@ -18,7 +19,7 @@ namespace ET
 		private void Awake()
 		{
 #if ENABLE_IL2CPP
-			this.CodeMode = CodeMode.ILRuntime;
+			//this.CodeMode = CodeMode.ILRuntime;
 #endif
 			
 			System.AppDomain.CurrentDomain.UnhandledException += (sender, e) =>

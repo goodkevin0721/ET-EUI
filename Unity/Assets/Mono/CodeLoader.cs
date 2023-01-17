@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using UnityEngine;
 using System.Linq;
+using HybridCLR;
 
 namespace ET
 {
@@ -126,9 +127,48 @@ namespace ET
 					start.Run();
 					break;
 				}
+				case CodeMode.HybridCLR:
+				{
+					(AssetBundle assetsBundle, Dictionary<string, UnityEngine.Object> dictionary) = AssetsBundleHelper.LoadBundle("code.unity3d");
+					LoadMetadataForAOTAssemblies(dictionary);
+
+					byte[] assBytes = ((TextAsset)dictionary["Code.dll"]).bytes;
+					byte[] pdbBytes = ((TextAsset)dictionary["Code.pdb"]).bytes;
+					if (assetsBundle != null)
+					{
+						assetsBundle.Unload(true);	
+					}
+					
+					assembly = Assembly.Load(assBytes, pdbBytes);
+					foreach (Type type in this.assembly.GetTypes())
+					{
+						this.monoTypes[type.FullName] = type;
+						this.hotfixTypes[type.FullName] = type;
+					}
+					IStaticMethod start = new MonoStaticMethod(assembly, "ET.Entry", "Start");
+					start.Run();
+					break;
+				}
 			}
 		}
-
+		/// <summary>
+		/// 为aot assembly加载原始metadata， 这个代码放aot或者热更新都行。
+		/// 一旦加载后，如果AOT泛型函数对应native实现不存在，则自动替换为解释模式执行
+		/// </summary>
+		private static void LoadMetadataForAOTAssemblies(Dictionary<string,UnityEngine.Object> dictionary)
+		{
+			/// 注意，补充元数据是给AOT dll补充元数据，而不是给热更新dll补充元数据。
+			/// 热更新dll不缺元数据，不需要补充，如果调用LoadMetadataForAOTAssembly会返回错误
+			/// 
+			HomologousImageMode mode = HomologousImageMode.SuperSet;
+			foreach (var aotDllName in LoadDll.AOTMetaAssemblyNames)
+			{
+				byte[] dllBytes = ((TextAsset)dictionary[aotDllName]).bytes;
+				// 加载assembly对应的dll，会自动为它hook。一旦aot泛型函数的native函数不存在，用解释器版本代码
+				LoadImageErrorCode err = RuntimeApi.LoadMetadataForAOTAssembly(dllBytes, mode);
+				Debug.Log($"LoadMetadataForAOTAssembly:{aotDllName}. mode:{mode} ret:{err}");
+			}
+		}
 		// 热重载调用下面三个方法
 		// CodeLoader.Instance.LoadLogic();
 		// Game.EventSystem.Add(CodeLoader.Instance.GetTypes());
